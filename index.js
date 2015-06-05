@@ -2,7 +2,7 @@
 var koa = require('koa'),
     route = require('koa-route'),
     hbs = require('koa-hbs'),
-    ng = require('scrapers/angular');
+    ng = require('./scrapers/angular');
 
 var app = koa();
 
@@ -21,9 +21,7 @@ app.use(function *(next) {
   if(this.path !== '/angular') {
     return yield next
   }
-  ng.then(function(data) {
-    yield this.render('angular', { })
-  })
+  yield this.render('angular', { body: ng.links });
 });
 
 app.listen(9000)

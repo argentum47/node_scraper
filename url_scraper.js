@@ -40,35 +40,7 @@ UrlScaper.prototype = {
     .then(function(page) {
       return usr.openPage(page, url); 
     })
-    .then(function(page) {
-      console.log(3);
-      page = page.page;
-      page.evaluate(function() {
-        return [].map.call(document.querySelectorAll(".side-navigation a"), function(e) {
-          return [e.text, e.href]
-        })
-      }, function(result) {
-          console.log(result);
-          usr.ph.exit();
-        
-      });
-
-      function getAllLinks(elem) {
-        console.log(elem)
-        return function(elem) {
-          return [].map.call(document.querySelectorAll(elem), function(e) {
-            return [e.text, e.href];
-          });
-        }
-      }
-
-      function exitPhantom(result) {
-        usr.links = result;
-        console.log(usr, result);
-        usr.ph.exit();
-      }
-    })
-  }
+ }
 }
 
 module.exports = UrlScaper;
