@@ -11,17 +11,25 @@ app.use(hbs.middleware({
 }));
 
 app.use(function *(next) {
-  if(this.path !== '/') { 
+  if(this.path !== '/') {
     return yield next
   }
   yield this.render('index', { title: "Scraper" })
 });
 
 app.use(function *(next) {
+  if(this.path !== '/angular/partials/*')
+    return yield next
+  var links = ng.scrapeContent(url)
+  yield this.render('angular', { body: links })
+})
+
+app.use(function *(next) {
   if(this.path !== '/angular') {
     return yield next
   }
-  yield this.render('angular', { body: ng.links });
+  var links = yield ng.getLinks("ng").finally(function() { this.ph.exit()});
+  yield this.render('angular', { body: links})
 });
 
 app.listen(9000)

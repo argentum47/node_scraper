@@ -1,46 +1,56 @@
-var q = require('q'),
-    phantom = require('phantom');
+var phantom = require('node-phantom-async');
+var http    = require('http');
+var cheerio = require('cheerio');
 
-function UrlScaper (base_url) {
+function UrlScraper ( base_url ) {
     this.base_url = base_url;
     this.links = [];
-    this.phantom  = phantom;  
 }
 
-UrlScaper.prototype = {
-  createPhantom: function() {
-    var defer = q.defer();
-    this.phantom.create(function(ph) {
-      defer.resolve(ph);
-    });
-    return defer.promise;
-  },
-  createPage: function( ph ) {
-    var defer = q.defer();
-    ph.createPage(function(page, err) {
-      if(err)  defer.reject(err);
-      else     defer.resolve(page)
+UrlScraper.prototype = {
+    scrapeUrl: function( url ) {
+        var that = this;
+        return phantom.create()
+            .bind({})
+            .then(function(ph) {
+                this.ph = ph;
+                return ph.createPage();
+            })
+            .then(function(page) {
+                this.page = page;
+                return page.open(url)
+            })
+            .then(function(status) {
+                console.log("status", status)
+                return this.page
+            })
+    },
+
+    download: function(url) {
+      return new Promise(function(resolve, reject) {
+            http.get(url, function(res) {
+                var data = "";
+                res.on('data', function(chunk) {
+                    data += chunk;
+                });
+
+                res.on('end', function() {
+                    return resolve(data);
+                });
+            }).on('error', function(err) {
+                return reject(err);
+            });
       });
-    return defer.promise;
-  },
-  openPage: function( page, url ) {
-    var defer = q.defer();
-    page.open(url, function(status) {
-      defer.resolve({page: page, status: status});
-    })
-    return defer.promise;
-  },
-  getLinks: function( url, elem ) {
-    var usr = this;
-    this.createPhantom()
-      .then(function(ph) {
-        usr.ph = ph;
-        return usr.createPage(ph);        
+    },
+
+    scrapeContent: function(url) {
+      this.download(url).then(function(data) {
+        var $ = cheerio.load(data);
+        console.log(data)
+      }).catch(function(err) {
+        console.log(err)
       })
-    .then(function(page) {
-      return usr.openPage(page, url); 
-    })
- }
+    }
 }
 
-module.exports = UrlScaper;
+module.exports = UrlScraper;
