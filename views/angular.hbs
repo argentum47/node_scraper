@@ -1,17 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>{{title}}</title>
-</head>
-<body>
-  Node Docs
-  <a href="/angular">Angular</a>
-  <ul>
+  <head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <style>
+      div, ul {
+      margin: 0;
+      padding: 0;
+      }
 
-  {{#each body}}
-    <li><a href={{this.[1]}}>{{this.[0]}}</a></li>
-  {{/each}}
-  </ul>
-</body>
+      .navbar, .sidebar {
+      list-style-type: none;
+      }
+
+      .navbar li {
+      display: inline-block;
+      padding: 0 5px;
+      }
+
+      .sidebar {
+      float: left;
+      }
+
+      .content {
+      float: right;
+      width: 50%;
+      }
+
+      .clear {
+      clear: both;
+      }
+    </style>
+  </head>
+  <body>
+    Node Docs
+    <ul class="navbar">
+      <li> <a href="/angular">Angular</a> </li>
+    </ul>
+
+    <div class="sidebar">
+      <ul>
+        {{#each sidebar}}
+        <li><a href={{this.[1]}}>{{this.[0]}}</a></li>
+        {{/each}}
+      </ul>
+    </div>
+    <div class="content">{{{container}}}</div>
+    <div class="clear">
+  </body>
 </html>

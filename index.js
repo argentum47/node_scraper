@@ -1,35 +1,32 @@
 'use strict';
 var koa = require('koa'),
-    route = require('koa-route'),
+    router = require('koa-router')(),
     hbs = require('koa-hbs'),
     ng = require('./scrapers/angular');
 
 var app = koa();
 
-app.use(hbs.middleware({
-  viewPath: __dirname + '/views'
-}));
+app
+  .use(hbs.middleware({
+    viewPath: __dirname + '/views'
+  }))
+  .use(router.routes());
 
-app.use(function *(next) {
-  if(this.path !== '/') {
-    return yield next
-  }
-  yield this.render('index', { title: "Scraper" })
-});
-
-app.use(function *(next) {
-  if(this.path !== '/angular/partials/*')
-    return yield next
-  var links = ng.scrapeContent(url)
-  yield this.render('angular', { body: links })
+router.get('/', function *(next) {
+  yield this.render('index', { title: 'Scraper' })
 })
 
-app.use(function *(next) {
-  if(this.path !== '/angular') {
-    return yield next
-  }
-  var links = yield ng.getLinks("ng").finally(function() { this.ph.exit()});
-  yield this.render('angular', { body: links})
+router.get('/angular/partials/*', function *(next) {
+  var href = this.request.url.replace(/^\/angular\/partials\/api\//, '');
+  var links = yield ng.getLinks()
+  var content = yield ng.scrapeContent(href).finally(function() { this.ph.exit(); });
+  yield this.render('angular', { sidebar: links, container: content })
+})
+
+router.get('/angular', function *(next) {
+  var links = yield ng.getLinks().finally(function() { this.ph.exit()});
+  yield this.render('angular', { sidebar: links})
 });
+
 
 app.listen(9000)
