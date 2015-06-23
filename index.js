@@ -2,7 +2,8 @@
 var koa = require('koa'),
     router = require('koa-router')(),
     hbs = require('koa-hbs'),
-    ng = require('./scrapers/angular');
+    ng = require('./scrapers/angular'),
+    bB = require('./scrapers/backbone');
 
 var app = koa();
 
@@ -28,5 +29,10 @@ router.get('/angular', function *(next) {
   yield this.render('angular', { sidebar: links})
 });
 
+router.get('/backbone', function *(next) {
+  var links = yield bB.getLinks();
+  var html = yield bB.getContent(".container");
+  yield this.render('backbone', { sidebar: links, container: content })
+})
 
 app.listen(9000)

@@ -1,16 +1,18 @@
-var phantom = require('node-phantom-async');
-var http    = require('http');
+'use strict';
 
-function UrlScraper ( base_url ) {
-  this.base_url = base_url;
-  this.links = [];
-}
+var phantom = require('node-phantom-async'),
+    Promise = require('bluebird'),
+    request = require('request'),
+    cheerio = require('cheerio');
 
-UrlScraper.prototype = {
-  scrapeUrl: function( url ) {
-    var that = this;
-    return phantom.create()
-      .bind({})
+class UrlScraper {
+  constructor( base_url ) {
+    this.base_url = base_url;
+    this.links = [];
+  }
+
+  scrapeUrl( url ) {
+    return phantom.create().bind({})
       .then(function( ph ) {
         this.ph = ph;
         return ph.createPage();
@@ -23,9 +25,36 @@ UrlScraper.prototype = {
         console.log("status", status)
         return this.page
       })
-  },
+  }
 
-  scrapeContent: function(url) {
+  escapeAfter( selector ) {
+    this.htmlEscapeAfter = selector;
+    return this;
+  }
+
+  escapeBefore( selector ) {
+    this.htmlEscapeBefore = selector;
+    return this;
+  }
+
+  scrapeContent( url ) {
+    var that = this;
+    Promise.promisifyAll(request);
+
+    return request(url).then(function(err, resp, body) {
+      let $ = cheerio(body);
+      let html = $(rootSelector);
+
+      if(that.htmlEscapeBefore) {
+        html.find(that.htmlEscapeBefore).prevAll().remove();
+      }
+
+      if(that.htmlEscapeAfter) {
+        html.find(that.htmlEscapeAfter).nextAll().addBack().remove();
+      }
+
+      return html;
+    });
   }
 }
 
