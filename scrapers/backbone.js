@@ -1,7 +1,8 @@
 'use strict';
 // root = ".container";
 
-var UrlScraper = require('../url_scraper'),
+var cheerio = require('cheerio'),
+    UrlScraper = require('../url_scraper'),
     Cache = require('../cache.js')('backbonejz');
 
 var base_url = 'http://backbonejs.org/',
@@ -12,15 +13,51 @@ class Backbone extends UrlScraper {
     super( base_url );
   }
 
+  getLinks( element ) {
+    var cache = Cache.get( 'backbone.sidebar' );
+    if( cache )
+      return Promise.resolve( cache );
+    else {
+      let html = Cache.get( 'backbone.html' ),
+          promise = cache ? Promise.resolve( html ) : this.getContent( '.container');
+
+      return promise.then(function( data ) {
+        //console.log(data, "geltLinks");
+
+        var that = this,
+            dom = cheerio.load(data).html();
+        var links = {};
+        var headers = [].slice.call( dom.querySelectorAll( "h2" ) )
+                        .map(function( node ) {
+                          return node;
+                        });
+
+        for(let i = 0, len = headers.length; i < len; i++) {
+          links[headers[i].id] = this.inBetween(dom,
+                                                {
+                                                  start: { type: 'id', name: headers[i].id },
+                                                  end: { type: 'id', name: (headers[i+1] && headers[i+1].id) }
+                                                },
+                                                '.header',
+                                                'innerText'
+                                               );
+        }
+        Cache.set( 'backbone.sidebar', links);
+        return links;
+      });
+    }
+  }
+
   getContent( rootElement ) {
-    if( Cache ) {
-      Promise.resolve(cache);
+    var cache = Cache.get( 'backbone.html' );
+    if( cache ) {
+     return Promise.resolve( cache );
     } else {
       return this.scrapeContent( this.base_url, rootElement ).then(function(data) {
-        console.log(data);
-        Cache.set('backbone.html', data);
+        //console.log(data, "getContent");
+        //Cache.set( 'backbone.html', JSON.stringify(data) );
         return data;
-      })
+      });
     }
   }
 }
@@ -28,4 +65,8 @@ class Backbone extends UrlScraper {
 var backBone = new Backbone(base_url);
 backBone.escapeBefore(except.before).escapeAfter(except.after);
 
-module.exports = backBone;
+backBone.getLinks('.header').then(function(data) {
+  console.log(data);
+})
+
+//module.exports = backBone;

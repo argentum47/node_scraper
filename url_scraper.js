@@ -2,7 +2,7 @@
 
 var phantom = require('node-phantom-async'),
     Promise = require('bluebird'),
-    request = require('request'),
+    req     = require('request'),
     cheerio = require('cheerio');
 
 class UrlScraper {
@@ -37,12 +37,48 @@ class UrlScraper {
     return this;
   }
 
-  scrapeContent( url ) {
-    var that = this;
-    Promise.promisifyAll(request);
+  makeSelector(data) {
+    let selector = data.name;
+    if(data.type === 'id')
+      selector = '#' + selector;
+    else if(data.type === 'className')
+      selector = '.' + start.name;;
 
-    return request(url).then(function(err, resp, body) {
-      let $ = cheerio(body);
+    return selector;
+  }
+
+  inBetween( dom, limits, selector, prop ) {
+    var el, start, end, matched = [];
+    if( limits.start ) {
+      start = this.makeSelector( limits.start );
+    }
+    end = limits.end;
+
+    if( dom instanceof NodeList && start && end ) {
+      el = document.querySelector( start );
+      while( el ) {
+        if( end && el[limits.end.type] != el[limits.end.name])
+          break;
+        if( el.nodeType === 1 ){
+          matched.push( [].slice.call( querySelectorAll( selector ) ).map(function( node ) {
+            return node[prop];
+          }) );
+
+        }
+        el = el.nextSibling;
+      }
+    }
+    return matched;
+  }
+
+  scrapeContent( url, rootSelector ) {
+    var that = this;
+    var request = Promise.promisify(req);
+
+    return request(url).then(function(contents) {
+      contents = contents[0].body;
+
+      let $ = cheerio.load(contents);
       let html = $(rootSelector);
 
       if(that.htmlEscapeBefore) {
@@ -52,8 +88,7 @@ class UrlScraper {
       if(that.htmlEscapeAfter) {
         html.find(that.htmlEscapeAfter).nextAll().addBack().remove();
       }
-
-      return html;
+      return $.html();
     });
   }
 }
