@@ -18,55 +18,45 @@ class Backbone extends UrlScraper {
     if( cache )
       return Promise.resolve( cache );
     else {
-      let html = Cache.get( 'backbone.html' ),
-          promise = cache ? Promise.resolve( html ) : this.getContent( '.container');
+      return this.scrapeUrl( base_url )
+        .then(function() {
+          return this.page.evaluate(function() {
+            $("#Events").prevAll().remove();
+            $("#faq").nextAll().addBack().remove();
 
-      return promise.then(function( data ) {
-        //console.log(data, "geltLinks");
+            var container = $(".container"),
+                headers = container.find('h2').map(function(i, e) { return e.innerText.replace(/Backbone\./i, '') }).toArray(),
+                sidebar = {};
+            var cur, nxt;
 
-        var that = this,
-            dom = cheerio.load(data).html();
-        var links = {};
-        var headers = [].slice.call( dom.querySelectorAll( "h2" ) )
-                        .map(function( node ) {
-                          return node;
-                        });
-
-        for(let i = 0, len = headers.length; i < len; i++) {
-          links[headers[i].id] = this.inBetween(dom,
-                                                {
-                                                  start: { type: 'id', name: headers[i].id },
-                                                  end: { type: 'id', name: (headers[i+1] && headers[i+1].id) }
-                                                },
-                                                '.header',
-                                                'innerText'
-                                               );
-        }
-        Cache.set( 'backbone.sidebar', links);
-        return links;
-      });
+            for(var i = 0, len = headers.length; i< len; i++) {
+              cur = $('#' + headers[i]);
+              nxt = cur.nextUntil('#' + headers[i+1]);
+              sidebar[headers[i]] = nxt.find('.header').map(function(i, v) { return v.innerText; }).toArray()
+            }
+            return sidebar;
+          });
+        }).then(function(result) {
+          Cache.set( 'backbone.sidebar', result );
+          return result;
+        });
     }
   }
 
   getContent( rootElement ) {
-    var cache = Cache.get( 'backbone.html' );
+    var cache = Cache.get( 'backbone.content' );
     if( cache ) {
-     return Promise.resolve( cache );
+      return Promise.resolve( cache );
     } else {
-      return this.scrapeContent( this.base_url, rootElement ).then(function(data) {
-        //console.log(data, "getContent");
-        //Cache.set( 'backbone.html', JSON.stringify(data) );
-        return data;
+      let sidelinks = this.getLinks().then(function() {
+        //this.page.evaluate();
+        // oh fuck.
       });
+      if( )
     }
   }
 }
 
-var backBone = new Backbone(base_url);
-backBone.escapeBefore(except.before).escapeAfter(except.after);
+// bb.getContent( '.container' ).then(function(data) { console.log(data); }).finally(function() { this.ph.exit() })
 
-backBone.getLinks('.header').then(function(data) {
-  console.log(data);
-})
-
-//module.exports = backBone;
+module.exports = new Backbone(base_url);;

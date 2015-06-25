@@ -23,11 +23,11 @@ class UrlScraper {
       })
       .then(function( status ) {
         console.log("status", status)
-        return this.page
+        return this.page.includeJs('http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js')
       })
   }
 
-  escapeAfter( selector ) {
+  escapeAfter( elements, selector ) {
     this.htmlEscapeAfter = selector;
     return this;
   }
